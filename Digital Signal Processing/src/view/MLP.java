@@ -33,11 +33,13 @@ public class MLP {
         Neuron[] first_hidden_layer= new Neuron[NUMBER_OF_HIDDEN_NEURONS];
         Neuron[] second_hidden_layer= new Neuron[NUMBER_OF_HIDDEN_NEURONS];
         Neuron[] third_hidden_layer= new Neuron[NUMBER_OF_HIDDEN_NEURONS];
+        Neuron[] fourth_hidden_layer= new Neuron[NUMBER_OF_HIDDEN_NEURONS];
         Neuron[] output_layer= new Neuron[NUMBER_OF_CLASSES];
         
         MLP_Functions.init_neurons(first_hidden_layer, train[0].length-1);
         MLP_Functions.init_neurons(second_hidden_layer, NUMBER_OF_HIDDEN_NEURONS);
         MLP_Functions.init_neurons(third_hidden_layer, NUMBER_OF_HIDDEN_NEURONS);
+        MLP_Functions.init_neurons(fourth_hidden_layer, NUMBER_OF_HIDDEN_NEURONS);
         MLP_Functions.init_neurons(output_layer, NUMBER_OF_HIDDEN_NEURONS);
         
         ArrayList<Double> error= new ArrayList<>();
@@ -46,14 +48,14 @@ public class MLP {
         while(it< max_it && ERROR!=0){
             ERROR=0;   int count=0; 
             for(int i=0; i<training_amount; i++){   
-                MLP_Functions.feed_forward(train, i, first_hidden_layer, second_hidden_layer, third_hidden_layer, output_layer);                
+                MLP_Functions.feed_forward(train, i, first_hidden_layer, second_hidden_layer, third_hidden_layer, fourth_hidden_layer, output_layer);                
                 int label= (int) train[i][train[0].length-1];
                 if(MLP_Functions.winner_neuron(output_layer)== label){
                     count+=1;
                 }
                 ERROR+= MLP_Functions.calculate_totalError(output_layer, train_target[i]);
                 //ERROR+= MLP_Functions.cross_entropy_error(train_target[i], output_layer);
-                MLP_Functions.backpropagation(output_layer, third_hidden_layer, second_hidden_layer, first_hidden_layer, train_target[i], learning_rate, train, i);
+                MLP_Functions.backpropagation(output_layer, fourth_hidden_layer, third_hidden_layer, second_hidden_layer, first_hidden_layer, train_target[i], learning_rate, train, i);
             }
             System.out.print("ERRO Médio²= "+(ERROR/training_amount)); error.add((ERROR/training_amount));
             System.out.print(" || acertos no conjunto de TREINAMENTO: "+count+" de "+training_amount);
@@ -62,7 +64,7 @@ public class MLP {
 
             int test_amount= test.length; double accuracy= 0; double error_test=0;
             for(int i=0; i<test_amount; i++){
-                MLP_Functions.feed_forward(test, i, first_hidden_layer, second_hidden_layer, third_hidden_layer, output_layer);
+                MLP_Functions.feed_forward(test, i, first_hidden_layer, second_hidden_layer, third_hidden_layer, fourth_hidden_layer, output_layer);
                 int label= (int) test[i][test[0].length-1];
                 if(MLP_Functions.winner_neuron(output_layer)== label){
                     accuracy+=1;

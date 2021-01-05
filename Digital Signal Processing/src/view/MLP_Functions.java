@@ -30,7 +30,7 @@ public class MLP_Functions {
     }
     //********************************************************
     
-    public static void feed_forward(double[][] feature_matrix, int index, Neuron[] first_hidden_layer, Neuron[] second_hidden_layer, Neuron[] third_hidden_layer, Neuron[] output_layer){
+    public static void feed_forward(double[][] feature_matrix, int index, Neuron[] first_hidden_layer, Neuron[] second_hidden_layer, Neuron[] third_hidden_layer, Neuron[] fourth_hidden_layer, Neuron[] output_layer){
         for(int i=0; i<first_hidden_layer.length; i++){ //from input to first hidden layer
             first_hidden_layer[i].setActivation_value(0);
             for(int j=0; j<feature_matrix[0].length-1; j++){
@@ -61,11 +61,21 @@ public class MLP_Functions {
             third_hidden_layer[i].setActivation_value(sigmoid_function(third_hidden_layer[i].getActivation_value()));
         }
         
-        for(int i=0; i<output_layer.length; i++){ //from third hidden layer to output layer
-            output_layer[i].setActivation_value(0);
+        for(int i=0; i<fourth_hidden_layer.length; i++){ //from third to fourth hidden layer
+            fourth_hidden_layer[i].setActivation_value(0);
             for(int j=0; j<third_hidden_layer.length; j++){
+                fourth_hidden_layer[i].setActivation_value(fourth_hidden_layer[i].getActivation_value() +
+                        third_hidden_layer[j].getActivation_value() * fourth_hidden_layer[i].getWeights()[j]);
+            }
+            fourth_hidden_layer[i].setActivation_value(fourth_hidden_layer[i].getActivation_value() + fourth_hidden_layer[i].getBias());
+            fourth_hidden_layer[i].setActivation_value(sigmoid_function(fourth_hidden_layer[i].getActivation_value()));
+        }
+        
+        for(int i=0; i<output_layer.length; i++){ //from fourth hidden layer to output layer
+            output_layer[i].setActivation_value(0);
+            for(int j=0; j<fourth_hidden_layer.length; j++){
                 output_layer[i].setActivation_value(output_layer[i].getActivation_value() + 
-                        third_hidden_layer[j].getActivation_value() * output_layer[i].getWeights()[j]);
+                        fourth_hidden_layer[j].getActivation_value() * output_layer[i].getWeights()[j]);
             }
             output_layer[i].setActivation_value(output_layer[i].getActivation_value() + output_layer[i].getBias());
             output_layer[i].setActivation_value(sigmoid_function(output_layer[i].getActivation_value()));
@@ -132,20 +142,38 @@ public class MLP_Functions {
     }
     //******************************************************************************************************    
     
-    public static void backpropagation(Neuron[] output_layer, Neuron[] third_hidden_layer, Neuron[] second_hidden_layer, Neuron[] first_hidden_layer, double[] target_values, double learning_rate, double[][] feature_matrix, int index){ 
+    public static void backpropagation(Neuron[] output_layer, Neuron[] fourth_hidden_layer, Neuron[] third_hidden_layer, Neuron[] second_hidden_layer, Neuron[] first_hidden_layer, double[] target_values, double learning_rate, double[][] feature_matrix, int index){ 
         double[] dCost_dA= new double[output_layer.length]; 
         double[] dA_dZ= new double[output_layer.length];
-        double[][] auxiliar_output_weights= new double[third_hidden_layer.length][output_layer.length];
+        double[][] auxiliar_output_weights= new double[fourth_hidden_layer.length][output_layer.length];
         for(int i=0; i<output_layer.length; i++){  //updating output neurons weights
             dCost_dA[i]= output_layer[i].getActivation_value() - target_values[i];
             dA_dZ[i]= output_layer[i].getActivation_value() * (1.0 - output_layer[i].getActivation_value());//d_sigmoid
             //dA_dZ[i]= 1; //d_softmax
-            for(int j=0; j<third_hidden_layer.length; j++){
-                double dZ_dW= third_hidden_layer[j].getActivation_value();  
+            for(int j=0; j<fourth_hidden_layer.length; j++){
+                double dZ_dW= fourth_hidden_layer[j].getActivation_value();  
                 double dCost_dW= dCost_dA[i] * dA_dZ[i] * dZ_dW;//full
                 auxiliar_output_weights[j][i]= output_layer[i].getWeights()[j] - learning_rate * dCost_dW;
             }
             output_layer[i].setBias(output_layer[i].getBias() - learning_rate * dCost_dA[i] * dA_dZ[i]);
+        }
+        //------------------------------------------------------------------------------------------------------------
+        //------------------------------------------------------------------------------------------------------------
+        double[] dCost_dA_fourth= new double[fourth_hidden_layer.length];
+        double[] dA_dZ_fourth= new double[fourth_hidden_layer.length];
+        double[][] auxiliar_fourth_hidden_weights= new double[third_hidden_layer.length][fourth_hidden_layer.length];
+        for(int i=0; i<fourth_hidden_layer.length; i++){ //updating fourth hidden neuron weights
+            dCost_dA_fourth[i]= 0;
+            for(int k=0; k<output_layer.length; k++){
+                dCost_dA_fourth[i]+= dCost_dA[k] * dA_dZ[k] * output_layer[k].getWeights()[i];
+            }
+            dA_dZ_fourth[i]= fourth_hidden_layer[i].getActivation_value() * (1.0 - fourth_hidden_layer[i].getActivation_value());
+            for(int j=0; j<third_hidden_layer.length; j++){
+                double dZ_dW_fourth= third_hidden_layer[j].getActivation_value();
+                double dCost_dW_fourth= dCost_dA_fourth[i] * dA_dZ_fourth[i] * dZ_dW_fourth;
+                auxiliar_fourth_hidden_weights[j][i]= fourth_hidden_layer[i].getWeights()[j] - learning_rate * dCost_dW_fourth;
+            }
+            fourth_hidden_layer[i].setBias(fourth_hidden_layer[i].getBias() - learning_rate * dCost_dA_fourth[i] * dA_dZ_fourth[i]);
         }
         //------------------------------------------------------------------------------------------------------------
         //------------------------------------------------------------------------------------------------------------
@@ -155,7 +183,7 @@ public class MLP_Functions {
         for(int i=0; i<third_hidden_layer.length; i++){ //updating third hidden neuron weights
             dCost_dA_third[i]= 0;
             for(int k=0; k<output_layer.length; k++){
-                dCost_dA_third[i]+= dCost_dA[k] * dA_dZ[k] * output_layer[k].getWeights()[i];
+                dCost_dA_third[i]+= dCost_dA_fourth[k] * dA_dZ_fourth[k] * fourth_hidden_layer[k].getWeights()[i]; 
             }
             dA_dZ_third[i]= third_hidden_layer[i].getActivation_value() * (1.0 - third_hidden_layer[i].getActivation_value());
             for(int j=0; j<second_hidden_layer.length; j++){
@@ -207,6 +235,7 @@ public class MLP_Functions {
         
         //updating the weights
         update_weights(output_layer, auxiliar_output_weights);
+        update_weights(fourth_hidden_layer, auxiliar_fourth_hidden_weights);
         update_weights(third_hidden_layer, auxiliar_third_hidden_weights);
         update_weights(second_hidden_layer, auxiliar_second_hidden_weights);
         update_weights(first_hidden_layer, auxiliar_first_hidden_weights);
