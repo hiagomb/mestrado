@@ -7,7 +7,9 @@ package feature_extraction;
 
 import acquisition.Wave_Audio_Signal;
 import analysis.Normalization;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  *
@@ -16,7 +18,7 @@ import java.util.Arrays;
 public class Feature_Extractor {
     
     //********************************EXTRACT FEATURES*****************************************************************
-    public double[][] extract_features(Wave_Audio_Signal[] signals, int number_of_emotions){
+    public double[][] extract_features(Wave_Audio_Signal[] signals){
         
         System.out.println("Extraíndo características...");
         
@@ -36,18 +38,16 @@ public class Feature_Extractor {
             feature_matrix[i]= concatenateVector(vector_dimension, ef2, ef3, teo, sf, ef1, zcr, se, signals[i].getSignal());
         }
         Normalization normalizer= new Normalization(); //I have to normalize teo_measures and spectral entropy measures
-//        normalizer.zscore(feature_matrix, ef2.getEnergy_vector().length+ef3.getEnergy_vector().length,
-//                ef2.getEnergy_vector().length+ ef3.getEnergy_vector().length +teo.getTeo_vector_measures().length);
-//        
-//        normalizer.zscore(feature_matrix, ef2.getEnergy_vector().length+ef3.getEnergy_vector().length+
-//                teo.getTeo_vector_measures().length+sf.getSf_measures().length+ef1.getEnergy_vector().length+
-//                zcr.getZcr_measures().length, ef2.getEnergy_vector().length+ef3.getEnergy_vector().length+
-//                teo.getTeo_vector_measures().length+sf.getSf_measures().length+ef1.getEnergy_vector().length+
-//                zcr.getZcr_measures().length+se.getSe_measures().length);
-        //normalizer.normaliza_maxMin(feature_matrix, 0, feature_matrix[0].length-1);
-        normalizer.zscore(feature_matrix, 0, feature_matrix[0].length-1);
+        normalizer.normaliza_maxMin(feature_matrix, ef2.getEnergy_vector().length+ef3.getEnergy_vector().length,
+                ef2.getEnergy_vector().length+ ef3.getEnergy_vector().length +teo.getTeo_vector_measures().length);
         
-        double[][] final_feature_matrix= labelAndBalance_feature_matrix(feature_matrix, signals, number_of_emotions, vector_dimension);
+        normalizer.normaliza_maxMin(feature_matrix, ef2.getEnergy_vector().length+ef3.getEnergy_vector().length+
+                teo.getTeo_vector_measures().length+sf.getSf_measures().length+ef1.getEnergy_vector().length+
+                zcr.getZcr_measures().length, ef2.getEnergy_vector().length+ef3.getEnergy_vector().length+
+                teo.getTeo_vector_measures().length+sf.getSf_measures().length+ef1.getEnergy_vector().length+
+                zcr.getZcr_measures().length+se.getSe_measures().length);
+        
+        double[][] final_feature_matrix= labelAndBalance_feature_matrix(feature_matrix, signals, vector_dimension);
         return final_feature_matrix;
     }
     //*********************************************************************************************************************************************************
@@ -104,65 +104,51 @@ public class Feature_Extractor {
     //*********************************************************************************************************************
     
     //********************************LABEL AND BALANCE FEATURE MATRIX*****************************************************************
-    public double[][] labelAndBalance_feature_matrix(double[][] feature_matrix, Wave_Audio_Signal[] signals, int number_of_emotions, int vector_dimension){
+    public double[][] labelAndBalance_feature_matrix(double[][] feature_matrix, Wave_Audio_Signal[] signals, int vector_dimension){
         
         //labeling the feature vectors for each class (0, 1, 2, 3, 4, 5, 6)
-        int [] count_signals= new int[number_of_emotions]; //couting the number of signals for each emotion
+        List<Integer> l= new ArrayList<>();
+        
+        
         for(int i=0; i<feature_matrix.length; i++){
             String signal_name= signals[i].getFile_name();
             //getting just the last part of the pathname -- cutting out absolute path
             signal_name= signal_name.split("\\\\")[signal_name.split("\\\\").length-1];
 
             if(signal_name.contains("W")){//anger
-                feature_matrix[i][vector_dimension]= 0;
-                count_signals[0]+=1;
+                feature_matrix[i][vector_dimension]= 0; 
+                //l.add(i);
             }else if(signal_name.contains("L")){//boredom
-                feature_matrix[i][vector_dimension]= 1;
-                count_signals[1]+=1;
-            }else if(signal_name.contains("E")){//disgust
-                feature_matrix[i][vector_dimension]= 2;
-                count_signals[2]+=1;
-            }else if(signal_name.contains("A")){//fear
-                feature_matrix[i][vector_dimension]= 3;
-                count_signals[3]+=1;
-            }else if(signal_name.contains("F")){//happiness
-                feature_matrix[i][vector_dimension]= 4;
-                count_signals[4]+=1;
-            }else if(signal_name.contains("N")){//neutrality
-                feature_matrix[i][vector_dimension]= 5;
-                count_signals[5]+=1;
-            }else if(signal_name.contains("T")){//sadness
                 feature_matrix[i][vector_dimension]= 6;
-                count_signals[6]+=1;
+                l.add(i);
+            }else if(signal_name.contains("E")){//disgust
+                feature_matrix[i][vector_dimension]= 6;
+                l.add(i);
+            }else if(signal_name.contains("A")){//fear
+                feature_matrix[i][vector_dimension]= 1; 
+                //l.add(i);
+            }else if(signal_name.contains("F")){//happiness
+                feature_matrix[i][vector_dimension]= 6;
+                l.add(i);
+            }else if(signal_name.contains("N")){//neutrality
+                feature_matrix[i][vector_dimension]= 2; 
+                //l.add(i);
+            }else if(signal_name.contains("T")){//sadness
+                feature_matrix[i][vector_dimension]= 3; 
+                //l.add(i);
             }
         }
         
-        //equalizing the number of signals for each emotion----------------------------------------
-//        int menor= Integer.MAX_VALUE;
-//        for(int i=0; i<number_of_emotions; i++){
-//            if(count_signals[i]< menor){
-//                menor= count_signals[i];
-//            }
-//        }
-//        
-//        double labeled_balanced_feature_matrix[][]= new double[menor*number_of_emotions][vector_dimension+1];
-//        int global_counter=0;
-//        for(int n=0; n<number_of_emotions; n++){
-//            int emotion_counter=0;
-//            for(int i=0; i<feature_matrix.length; i++){
-//                if(feature_matrix[i][vector_dimension]== n){
-//                    emotion_counter+=1;
-//                    if(emotion_counter<= menor){
-//                        labeled_balanced_feature_matrix[global_counter]= feature_matrix[i];
-//                        global_counter+=1;
-//                    }
-//                }
-//            }  
-//        }
-//        
-//        return labeled_balanced_feature_matrix;  
-        return feature_matrix;
+        double[][] four_feature_matrix= new double[feature_matrix.length - l.size()][feature_matrix[0].length];
+        int count=0;
+        for(int i=0; i<feature_matrix.length; i++){
+            if(feature_matrix[i][vector_dimension]!=6){
+                four_feature_matrix[count]= feature_matrix[i];
+                count+=1;
+            }
+        }
+
+        return four_feature_matrix;
     }
-    //*********************************************************************************************************************************************************
-        
+    //*********************************************************************************************************************************************************    
 }

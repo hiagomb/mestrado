@@ -22,71 +22,80 @@ import java.util.List;
  */
 public class MLP {
     
-    private final int NUMBER_OF_CLASSES= 7;
+    private final int NUMBER_OF_CLASSES= 4;
         
     
     public void multi_layer_perceptron(double learning_rate, double[][] train, double[][] train_target, double[][] test, double[][] test_target, int max_it){ 
-        int NUMBER_OF_HIDDEN_NEURONS = (train[0].length-1 + NUMBER_OF_CLASSES)/2;
-        //NUMBER_OF_HIDDEN_NEURONS= 100;
-        System.out.println("hidden_neurons= "+NUMBER_OF_HIDDEN_NEURONS);
+        int NUMBER_OF_HIDDEN_NEURONS = 32;
         
         Neuron[] first_hidden_layer= new Neuron[NUMBER_OF_HIDDEN_NEURONS];
-        Neuron[] second_hidden_layer= new Neuron[NUMBER_OF_HIDDEN_NEURONS];
-        Neuron[] third_hidden_layer= new Neuron[NUMBER_OF_HIDDEN_NEURONS];
-        Neuron[] fourth_hidden_layer= new Neuron[NUMBER_OF_HIDDEN_NEURONS];
-        Neuron[] output_layer= new Neuron[NUMBER_OF_CLASSES];
-        
+        Neuron[] output_layer= new Neuron[NUMBER_OF_CLASSES];        
         MLP_Functions.init_neurons(first_hidden_layer, train[0].length-1);
-        MLP_Functions.init_neurons(second_hidden_layer, NUMBER_OF_HIDDEN_NEURONS);
-        MLP_Functions.init_neurons(third_hidden_layer, NUMBER_OF_HIDDEN_NEURONS);
-        MLP_Functions.init_neurons(fourth_hidden_layer, NUMBER_OF_HIDDEN_NEURONS);
-        MLP_Functions.init_neurons(output_layer, NUMBER_OF_HIDDEN_NEURONS);
+        MLP_Functions.init_neurons(output_layer, first_hidden_layer.length);
         
-        ArrayList<Double> error= new ArrayList<>();
-        
-        int it= 0; double ERROR= Double.MAX_VALUE;  int training_amount= train.length;
+        ArrayList<Double> error_train= new ArrayList<>();
+        ArrayList<Double> error_testing= new ArrayList<>();
+                
+        int it= 0; double ERROR= Double.MAX_VALUE;  int training_amount= train.length; double[] es= new double[max_it]; int es_control= 0;
         while(it< max_it && ERROR!=0){
             ERROR=0;   int count=0; 
             for(int i=0; i<training_amount; i++){   
-                MLP_Functions.feed_forward(train, i, first_hidden_layer, second_hidden_layer, third_hidden_layer, fourth_hidden_layer, output_layer);                
+                MLP_Functions.feed_forward(train, i, first_hidden_layer, output_layer);                
                 int label= (int) train[i][train[0].length-1];
                 if(MLP_Functions.winner_neuron(output_layer)== label){
                     count+=1;
                 }
                 ERROR+= MLP_Functions.calculate_totalError(output_layer, train_target[i]);
-                //ERROR+= MLP_Functions.cross_entropy_error(train_target[i], output_layer);
-                MLP_Functions.backpropagation(output_layer, fourth_hidden_layer, third_hidden_layer, second_hidden_layer, first_hidden_layer, train_target[i], learning_rate, train, i);
+                MLP_Functions.backpropagation(output_layer, first_hidden_layer, train_target[i], learning_rate, train, i);
             }
-            System.out.print("ERRO Médio²= "+(ERROR/training_amount)); error.add((ERROR/training_amount));
-            System.out.print(" || acertos no conjunto de TREINAMENTO: "+count+" de "+training_amount);
+            System.out.print("ERRO Médio²= "+(ERROR/training_amount)); error_train.add((ERROR/training_amount));
+            System.out.println(" || acertos no conjunto de TREINAMENTO: "+count+" de "+training_amount);
             
-            it+=1;
-
-            int test_amount= test.length; double accuracy= 0; double error_test=0;
+            
+            //EARLY STOPPING == es
+            int test_amount= test.length; double error_test=0;
             for(int i=0; i<test_amount; i++){
-                MLP_Functions.feed_forward(test, i, first_hidden_layer, second_hidden_layer, third_hidden_layer, fourth_hidden_layer, output_layer);
-                int label= (int) test[i][test[0].length-1];
-                if(MLP_Functions.winner_neuron(output_layer)== label){
-                    accuracy+=1;
-                }
+                MLP_Functions.feed_forward(test, i, first_hidden_layer, output_layer);
                 error_test+= MLP_Functions.calculate_totalError(output_layer, test_target[i]);
             }
-            System.out.println("  ||  acurácia no conjunto de TESTE= "+(accuracy/test_amount)+"  || ERR= "+error_test/test_amount);
-            
+            es[it]= error_test/test_amount; error_testing.add(error_test/test_amount);
+            if(it>100){
+                if(es[it] > es[it-1]){
+                    es_control+= 1;
+                }else{
+                    es_control= 0;
+                }
+                if(es_control== 20){ //if for 20 sucessive iterations the validation error increases I stop the training
+                    it= max_it;
+                }
+            }
+            it+=1;
+        }//TESTE AQUI ->
+        
+        double[][] confusion_matrix= new double[NUMBER_OF_CLASSES][NUMBER_OF_CLASSES];
+        for(int i=0; i<NUMBER_OF_CLASSES; i++){
+            for(int j=0; j<NUMBER_OF_CLASSES; j++){
+                confusion_matrix[i][j]= 0;
+            }
         }
-        //TESTE AQUI ->
-//        int test_amount= test.length; double accuracy= 0;
-//        for(int i=0; i<test_amount; i++){
-//            MLP_Functions.feed_forward(test, i, hidden_neurons, output_neurons, W0, W1, bias);
-//            int label= (int) test[i][test[0].length-1];
-//            if(MLP_Functions.winner_neuron(output_neurons)== label){
-//                    accuracy+=1;
-//            }
-//        }
-//        System.out.println("acurácia= "+(accuracy/test_amount));
+                
+        int test_amount= test.length; double accuracy= 0; 
+        for(int i=0; i<test_amount; i++){
+            MLP_Functions.feed_forward(test, i, first_hidden_layer, output_layer);
+            int label= (int) test[i][test[0].length-1];
+            if(MLP_Functions.winner_neuron(output_layer)== label){
+                    accuracy+=1;
+            }
+            confusion_matrix[label][MLP_Functions.winner_neuron(output_layer)]+=1;
+        }
+        System.out.println(""); System.out.println("ACURÁCIA NO CONJUNTO DE TESTE= "+(accuracy/test_amount));
+        System.out.println(""); System.out.println("MATRIZ DE CONFUSÃO: ");
+        for(int i=0; i<NUMBER_OF_CLASSES; i++){
+            System.out.println(Arrays.toString(confusion_matrix[i]));
+        }
 
         Chart_Generator cg= new Chart_Generator();
-        cg.plotChart(cg.createChart(error, "Iteração", "Erro médio²", 0.0, 0.6), "src\\charts\\erroMedio.png");
+        cg.plotChart(cg.createEarlyStoppingChart(error_train, error_testing, "Iteração", "Erro médio²", 0.0, 0.40), "src\\charts\\erroMedio.png");
     }
     
    
@@ -113,57 +122,35 @@ public class MLP {
                                             //////
     //******************************EXTRACTING FEATURES*******************************************************
         Feature_Extractor f= new Feature_Extractor();
-        double[][] feature_matrix= f.extract_features(signals, 7); //7 is the number of classes/emotions
+        double[][] feature_matrix= f.extract_features(signals); 
     //********************************************************************************************************   
                                             //////
     //******************************SELECTING BEST SUBGROUP OF FEATURES***************************************                                         
         Paraconsistent_Plane pp= new Paraconsistent_Plane();
-        pp.paraconsistent_analyser(feature_matrix, 7, pp);
+        pp.paraconsistent_analyser(feature_matrix, 4, pp); 
         System.out.print("Todas características: "+(feature_matrix[0].length-1)+"|| ");        
         System.out.println("distancia para o ponto (1, 0) = "+pp.getDistance_from_right()+" || G1: "+pp.getG1()+" || G2: "+pp.getG2());
         ArrayList<Double> points_p= new ArrayList<>(); points_p.add(pp.getG1()); points_p.add(pp.getG2());
         
-//        Genetic_Algorithm ga= new Genetic_Algorithm();
-//        double[][] selected_matrix= ga.ga_featureSelection(100, feature_matrix);
-//        pp.paraconsistent_analyser(selected_matrix, 7, pp);
-//        System.out.print("Características selecionadas: "+(selected_matrix[0].length-1)+"|| ");        
-//        System.out.println("distancia para o ponto (1, 0) = "+pp.getDistance_from_right()+" || G1: "+pp.getG1()+" || G2: "+pp.getG2());
-//        points_p.add(pp.getG1()); points_p.add(pp.getG2());
-    //-----------------------------------------------------------------------------------------------------
-                                /*THIS IS JUST FOR TESTING -- I WILL DELETE THIS*/
-        Paraconsistent_Based_Selection selector= new Paraconsistent_Based_Selection();
-        int[] ranking_best_descriptors= selector.rank_best_features(feature_matrix, 7);
-//        System.out.println(Arrays.toString(ranking_best_descriptors));
-        int feature_dimension= 50; //I can choose the number here
-        double[][] matrix_test= new double[feature_matrix.length][feature_dimension+1]; //plus label
-        for(int j=0; j<(feature_dimension+1); j++){
-            for(int i=0; i<feature_matrix.length; i++){
-                if(j!=feature_dimension){
-                    matrix_test[i][j]= feature_matrix[i][ranking_best_descriptors[j]];
-                }else{
-                    matrix_test[i][j]= feature_matrix[i][feature_matrix[0].length-1];
-                }
-            }
-        }
-        
-        //testando
-        pp.paraconsistent_analyser(matrix_test, 7, pp);
-        System.out.print("MELHORES CARACTERÍSTICAS: || ");        
+        Genetic_Algorithm ga= new Genetic_Algorithm();
+        double[][] selected_matrix= ga.ga_featureSelection(45, feature_matrix, 4);
+        pp.paraconsistent_analyser(selected_matrix, 4, pp);
+        System.out.print("Características selecionadas: "+(selected_matrix[0].length-1)+"|| ");        
         System.out.println("distancia para o ponto (1, 0) = "+pp.getDistance_from_right()+" || G1: "+pp.getG1()+" || G2: "+pp.getG2());
-    //-----------------------------------------------------------------------------------------------------
-//        Chart_Generator cg= new Chart_Generator();
-//        cg.plotChart(cg.createParaconsistentChart(points_p), "src\\charts\\plano_paraconsistente.png");
-//    ********************************************************************************************************     
+        points_p.add(pp.getG1()); points_p.add(pp.getG2());
+
+        Chart_Generator cg= new Chart_Generator();
+        cg.plotChart(cg.createParaconsistentChart(points_p), "src\\charts\\plano_paraconsistente.png");
+    //********************************************************************************************************     
                                             //////    
-    //******************************CLASSIFICATION - HOLDOUT*******************************  
+    //******************************CLASSIFICATION - HOLDOUT**************************************************  
         Holdout obj= new Holdout();
-//        System.out.println("CLASSIFICAÇÃO COM TODAS CARACTERÍSTICAS");
-//        obj.holdout(feature_matrix, obj, 0.90, 7);
-//        new MLP().multi_layer_perceptron(0.1, obj.getTrain(), obj.getTrain_target(), obj.getTest(), obj.getTest_target(), 2000);
+        //System.out.println("CLASSIFICAÇÃO COM TODAS CARACTERÍSTICAS");
+        //obj.holdout(feature_matrix, obj, 0.30, 4);
+        //new MLP().multi_layer_perceptron(0.1, obj.getTrain(), obj.getTrain_target(), obj.getTest(), obj.getTest_target(), 2000);
         
         System.out.println("CLASSIFICAÇÃO COM CARACTERÍSTICAS SELECIONADAS");
-        obj.holdout(matrix_test, obj, 0.50, 7);
-        new MLP().multi_layer_perceptron(0.1, obj.getTrain(), obj.getTrain_target(), obj.getTest(), obj.getTest_target(), 20000);
-
+        obj.holdout(selected_matrix, obj, 0.40, 4); 
+        new MLP().multi_layer_perceptron(0.1, obj.getTrain(), obj.getTrain_target(), obj.getTest(), obj.getTest_target(), 100000);
     }
 }

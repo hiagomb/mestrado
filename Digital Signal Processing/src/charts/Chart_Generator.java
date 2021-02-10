@@ -73,6 +73,42 @@ public class Chart_Generator{
         
         return xylineChart;
     }
+    
+    
+    public JFreeChart createEarlyStoppingChart(ArrayList<Double> train, ArrayList<Double> test, String xlabel, String ylabel, double lower_range, double upper_range){
+        
+        JFreeChart xyChart= ChartFactory.createXYLineChart("", 
+                xlabel, ylabel, createDoubleDataSet(train, test), PlotOrientation.VERTICAL, true, true, false);
+        
+        final XYPlot plot= xyChart.getXYPlot();
+        plot.getDomainAxis().setAutoRange(true);
+        plot.setBackgroundPaint(Color.white);
+        plot.setRangeGridlinePaint(Color.GRAY);
+        plot.getRenderer().setSeriesPaint(0, Color.black);
+        plot.getRenderer().setSeriesPaint(1, Color.red);
+        
+        NumberAxis range= (NumberAxis) plot.getRangeAxis();
+        range.setRange(lower_range, upper_range);
+        
+        return xyChart;
+    }
+    
+    private XYDataset createDoubleDataSet(ArrayList<Double> train, ArrayList<Double> test){
+        final XYSeries training= new XYSeries("Treinamento");
+        for(int i=0; i<train.size(); i++){
+            training.add(i, train.get(i));
+        }
+        
+        final XYSeries testing= new XYSeries("Teste");
+        for(int i=0; i<test.size(); i++){
+            testing.add(i, test.get(i));
+        }
+        
+        final XYSeriesCollection dataset= new XYSeriesCollection();
+        dataset.addSeries(training);
+        dataset.addSeries(testing);
+        return dataset;
+    }
 
     private XYDataset createDataset(ArrayList<Double> list, String serie_name) {
         final XYSeries distance_1_0= new XYSeries(serie_name);

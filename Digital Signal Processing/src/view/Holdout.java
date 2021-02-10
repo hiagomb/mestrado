@@ -20,15 +20,18 @@ public class Holdout {
     private double[][] train_target;
     private double[][] test;
     private double[][] test_target;
+    private List<Integer> test_indexes;
 
     public Holdout() {
+        test_indexes= new ArrayList<>();
     }
 
-    public Holdout(double[][] train, double[][] train_target, double[][] test, double[][] test_target) {
+    public Holdout(double[][] train, double[][] train_target, double[][] test, double[][] test_target, List<Integer> test_indexes) {
         this.train = train;
         this.train_target = train_target;
         this.test = test;
         this.test_target = test_target;
+        this.test_indexes= test_indexes;
     }
 
     public double[][] getTrain() {
@@ -62,6 +65,16 @@ public class Holdout {
     public void setTest_target(double[][] test_target) {
         this.test_target = test_target;
     }
+
+    public List<Integer> getTest_indexes() {
+        return test_indexes;
+    }
+
+    public void setTest_indexes(List<Integer> test_indexes) {
+        this.test_indexes = test_indexes;
+    }
+    
+    
     
     public void holdout(double[][] feature_matrix, Holdout obj, double training_percentage, int classes){ //passing as a float:. 70% = 0.70
         int amount= feature_matrix.length;
@@ -69,7 +82,7 @@ public class Holdout {
         for(int i=0; i<amount; i++){
             l.add(i);
         }
-        Collections.shuffle(l);
+        Collections.shuffle(l); List<Integer> indexes= new ArrayList<>();
         
         int train_amount= (int) (training_percentage * amount);
         double[][] train= new double[train_amount][feature_matrix[0].length];
@@ -82,6 +95,7 @@ public class Holdout {
                 train[i]= feature_matrix[l.get(i)];
                 train_target[i]= configure_targets(train[i], classes);
             }else{
+                indexes.add(l.get(i));
                 test[i-train_amount]= feature_matrix[l.get(i)];
                 test_target[i-train_amount]= configure_targets(test[i-train_amount], classes);
             }
@@ -90,6 +104,7 @@ public class Holdout {
         obj.setTrain_target(train_target);
         obj.setTest(test);
         obj.setTest_target(test_target);
+        obj.setTest_indexes(indexes);
     }
     
      public double[] configure_targets(double[] feature_vector, int classes){

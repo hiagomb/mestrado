@@ -17,7 +17,6 @@ import java.util.Arrays;
  */
 public class Paraconsistent_Based_Selection {
    
-    private final int NUMBER_OF_CLASSES= 7;
     
     //here I perform the analysis made by the PARACONSISTENT FEATURE ENGINEERING for each feature 
     //so I can create a ranking of the best descriptors
@@ -70,33 +69,6 @@ public class Paraconsistent_Based_Selection {
     
     
     
-    
-    public void selectBestFeatures(double[][] feature_matrix){
-        int N= feature_matrix[0].length-1;  //-1 because the label
-        int[] binary_vector= new int[N]; 
-        BigInteger max= new BigInteger("2");  max= max.pow(N);
-        
-        for(int number_of_features=1; number_of_features<=N; number_of_features++){     
-            for(BigInteger b= BigInteger.valueOf(0); b.compareTo(max)<0; b= b.add(BigInteger.ONE)){
-                decBinConversion(b, binary_vector);
-                int one_count= 0;
-                ArrayList<String> positions= new ArrayList<>();
-                for(int i=0; i<N; i++){
-                    if(binary_vector[i]==1){
-                        positions.add(""+i);
-                        one_count+=1;
-                    }
-                }
-            
-                if(one_count== number_of_features){
-                    setUp_and_Test_subMatrix(feature_matrix, number_of_features, positions);
-                }
-            }
-        }    
-  
-    }
-    
-    
     public void decBinConversion(BigInteger bi, int[] binary_vector){  //tem que retornar um int[]
         String bin= bi.toString(2); //converts from decimal to binary representation (2)
         int first_position= binary_vector.length - bin.length();
@@ -109,12 +81,11 @@ public class Paraconsistent_Based_Selection {
                 binary_vector[i]= Integer.parseInt(Character.toString(bin.charAt(char_count)));
                 char_count+=1;
             }
-            //System.out.print(""+binary_vector[i]);
         }
     }
     
     
-    public Paraconsistent_Plane setUp_and_Test_subMatrix(double[][] feature_matrix, int number_of_features, ArrayList<String> positions){
+    public Paraconsistent_Plane setUp_and_Test_subMatrix(double[][] feature_matrix, int number_of_features, ArrayList<String> positions, int number_of_classes){
         double[][] subMatrix= new double[feature_matrix.length][number_of_features+1]; //plus label
         
         for(int j=0; j<(number_of_features+1); j++){ //column == each feature
@@ -127,13 +98,7 @@ public class Paraconsistent_Based_Selection {
             }
         }//testing the submatrix
         Paraconsistent_Plane pp= new Paraconsistent_Plane();
-        pp.paraconsistent_analyser(subMatrix, NUMBER_OF_CLASSES, pp);
-//        System.out.print("Matriz com a(s) característica(s) : ");
-//        for(int i=0; i<positions.size(); i++){
-//            System.out.print(""+positions.get(i)+" ");
-//        }
-//        System.out.print("...produz distancia para ponto (1,0) = "+pp.getDistance_from_right());
-//        System.out.println("");
+        pp.paraconsistent_analyser(subMatrix, number_of_classes, pp);
         return pp;
     }
     

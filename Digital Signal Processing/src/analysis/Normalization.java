@@ -78,45 +78,4 @@ public class Normalization {
         }
     }
     
-    
-    public static void main(String[] args) {
-        double[][] feature_matrix_teste= new double[6][3];
-        
-        feature_matrix_teste[0][0]= 24; feature_matrix_teste[0][1]= 23; feature_matrix_teste[0][2]= 4;
-        feature_matrix_teste[1][0]= 22; feature_matrix_teste[1][1]= 56; feature_matrix_teste[1][2]= 54;
-        feature_matrix_teste[2][0]= 53; feature_matrix_teste[2][1]= 143;feature_matrix_teste[2][2]= 98;
-        feature_matrix_teste[3][0]= 57; feature_matrix_teste[3][1]= 32; feature_matrix_teste[3][2]= 9;
-        feature_matrix_teste[4][0]= 12; feature_matrix_teste[4][1]= 65; feature_matrix_teste[4][2]= 13;
-        feature_matrix_teste[5][0]= 9;  feature_matrix_teste[5][1]= 12; feature_matrix_teste[5][2]= 2;
-
-        
-        System.out.println("MATRIZ ORIGINAL");
-        for(int i=0; i<feature_matrix_teste.length; i++){
-            for(int j=0; j<feature_matrix_teste[0].length; j++){
-                System.out.print("["+feature_matrix_teste[i][j]+"]");
-            }
-            System.out.println("");
-        }
-//        
-//        System.out.println("MATRIZ NORMALIZADA");
-        Normalization objteste= new Normalization();
-//        objteste.normaliza_maxMin(feature_matrix_teste, 0, 2);
-//        for(int i=0; i<feature_matrix_teste.length; i++){
-//            for(int j=0; j<feature_matrix_teste[0].length; j++){
-//                System.out.print("["+feature_matrix_teste[i][j]+"]");
-//            }
-//            System.out.println("");
-//        }
-
-        objteste.zscore(feature_matrix_teste, 0, feature_matrix_teste[0].length);
-        System.out.println("MATRIZ com ZSCORE");
-        for(int i=0; i<feature_matrix_teste.length; i++){
-            for(int j=0; j<feature_matrix_teste[0].length; j++){
-                System.out.print("["+feature_matrix_teste[i][j]+"]");
-            }
-            System.out.println("");
-        }
-        
-    }
-    
 }

@@ -85,25 +85,25 @@ public class Genetic_Algorithm {
     
     private static ArrayList<Double> list= new ArrayList<>(); //for the chart
     
-    public double[][] ga_featureSelection(int max_generation, double[][] feature_matrix){ 
+    public double[][] ga_featureSelection(int max_generation, double[][] feature_matrix, int number_of_classes){ 
         init_population();
         int generation=1;
         setBest_individual(getPopulation()[0]);
-        double[][] pizza= fitness(feature_matrix, 1.5);
+        double[][] pizza= fitness(feature_matrix, 1.5, number_of_classes);
         
         System.out.println("Selecionando melhor subgrupo de características com AG");
         while(generation< max_generation){
             ArrayList<String> parents= population_selection(pizza);
             reproduction(parents);
             System.out.print("Generation "+generation+"  ||  ");    generation+=1;
-            pizza= fitness(feature_matrix, 1.5);   
+            pizza= fitness(feature_matrix, 1.5, number_of_classes);   
         }
         System.out.print("MELHOR INDIVIDUO: ");
         System.out.println(Arrays.toString(getBest_individual()));
         
         //chart generation
         Chart_Generator cg= new Chart_Generator();
-        cg.plotChart(cg.createChart(list, "Geração", "Distância do ponto P(1,0)", 0.95, 1.30), "src\\charts\\evolucao_AG.png");
+        cg.plotChart(cg.createChart(list, "Geração", "Distância do ponto P(1,0)", 1.04, 1.22), "src\\charts\\evolucao_AG.png");
         
         return assemble_selected_matrix(feature_matrix);      
     }
@@ -123,7 +123,7 @@ public class Genetic_Algorithm {
     }
     
     
-    public double[][] fitness(double[][] feature_matrix, double selective_pressure){ //the original matrix
+    public double[][] fitness(double[][] feature_matrix, double selective_pressure, int number_of_classes){ //the original matrix
         double[] distances_1_0= new double[NUMBER_OF_FEATURES]; //probability of each individual  //HERE
         double[] copy= new double[NUMBER_OF_FEATURES];//HERE
         
@@ -137,7 +137,7 @@ public class Genetic_Algorithm {
                 }
             }
             Paraconsistent_Based_Selection pbs= new Paraconsistent_Based_Selection();
-            distances_1_0[i]= pbs.setUp_and_Test_subMatrix(feature_matrix, count, positions).getDistance_from_right();
+            distances_1_0[i]= pbs.setUp_and_Test_subMatrix(feature_matrix, count, positions, number_of_classes).getDistance_from_right();
             copy[i]= distances_1_0[i]; //without ordering
         }
         elitism_indexes= new int[copy.length];
@@ -169,7 +169,7 @@ public class Genetic_Algorithm {
             odds_pizza[j][1]= aux;
         }
         
-        best_of_all_time(best_index, copy, feature_matrix);
+        best_of_all_time(best_index, copy, feature_matrix, number_of_classes);
         //System.out.println("Indivíduo ["+best_index+"] está à "+copy[best_index]+" do ponto (1, 0)");
         return odds_pizza;
     }
@@ -229,7 +229,7 @@ public class Genetic_Algorithm {
         setPopulation(new_population);
     }
     
-    public void best_of_all_time(int best_index, double[] copy, double[][] feature_matrix){
+    public void best_of_all_time(int best_index, double[] copy, double[][] feature_matrix, int number_of_classes){
         ArrayList<String> pos= new ArrayList<>();
         int c=0;
         for(int j=0; j<population[0].length; j++){
@@ -238,7 +238,7 @@ public class Genetic_Algorithm {
                 c+=1;
             }
         }
-        double dist= new Paraconsistent_Based_Selection().setUp_and_Test_subMatrix(feature_matrix, c, pos).getDistance_from_right();
+        double dist= new Paraconsistent_Based_Selection().setUp_and_Test_subMatrix(feature_matrix, c, pos, number_of_classes).getDistance_from_right();
         if(copy[best_index]< dist){
             setBest_individual(getPopulation()[best_index]);
             System.out.println("distancia do melhor individuo para ponto (1, 0): "+copy[best_index]);
